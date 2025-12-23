@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChatBot Sheets</title>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;font-family:Arial,sans-serif;background:transparent;font-size:10px}
+
+    .chat-container{
+      position:fixed;
+      top:0.1cm;
+      left:0.1cm;
+      right:0.1cm;
+      max-width:400px;
+      margin:0 auto;
+      height:calc(100vh - 1cm);
+      border:1px solid #ccc;
+      border-radius:10px;
+      background:#fff;
+      box-shadow:0 2px 2px rgba(0,0,0,.2);
+      display:flex;
+      flex-direction:column;
+    }
+
+    .chat-header{
+      background:#007bff;
+      color:#fff;
+      padding:15px;
+      border-radius:10px 10px 0 0;
+      font-weight:bold
+    }
+    .chat-messages{
+      flex:1;
+      padding:10px;
+      overflow-y:auto
+    }
+    .message{
+      margin:8px 0;
+      padding:10px;
+      border-radius:8px;
+      max-width:80%;
+      white-space:pre-line;      /* baris baru pada \n */
+      word-break:break-word;     /* hindari overflow kata panjang */
+    }
+    .user-message{
+      background:#d1e7ff;
+      align-self:flex-end;
+      text-align:right
+    }
+    .bot-message{
+      background:#f1f1f1;
+      align-self:flex-start
+    }
+    /* link di dalam pesan */
+    .message a{
+      color:#007bff;
+      text-decoration:underline
+    }
+
+    .chat-input{
+      display:flex;
+      border-top:1px solid #ccc
+    }
+    .chat-input input{
+      flex:1;
+      padding:12px;
+      border:none;
+      outline:none;
+      font-size:10px
+    }
+    .chat-input button{
+      font-size:10px;
+      padding:12px;
+      background:#007bff;
+      color:#fff;
+      border:none;
+      cursor:pointer
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">🤖 Bot Assistant [ Klimis Menjawab ]</div>
+    <div class="chat-messages" id="chatMessages"></div>
+    <div class="chat-input">
+      <input id="userInput" type="text" placeholder="Tulis pesan..." />
+      <button onclick="sendMessage()">Kirim</button>
+    </div>
+  </div>
+
+  <script>
+    const SPREADSHEET_ID = '1REf1Z_Bxp91X_FMcgiEHOwAHl-hwAm44YXHGIvw3aXY';
+    const SHEET_NAME = 'Sheet1';
+
+    async function getSheetData(){
+      const url = `https://docs.google.com/spreadsheets/d/${SPREADSHEET_ID}/gviz/tq?tqx=out:json&sheet=${SHEET_NAME}`;
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(res.status);
+      const text = await res.text();
+      const json = JSON.parse(text.slice(47, -2));
+      return json.table.rows.map(r => ({
+        question: r.c[0]?.v || '',
+        keywords: r.c[1]?.v || '',
+        answer:   r.c[2]?.v || ''
+      }));
+    }
+
+    function findAnswer(data, input){
+      const user = input.toLowerCase().trim();
+      for (const it of data){
+        for (const k of it.keywords.toLowerCase().split(',')){
+          if (user.includes(k.trim())) return it.answer;
+        }
+        if (it.question.toLowerCase().includes(user)) return it.answer;
+      }
+      return "Maaf, saya tidak mengerti. Silakan coba pertanyaan lain.";
+    }
+
+    /* ---------- pesan dengan link ---------- */
+    function addMessage(text, sender){
+      const box = document.getElementById('chatMessages');
+      const msg = document.createElement('div');
+      msg.className = `message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
+
+      // ubah URL menjadi hyperlink
+      const linked = text.replace(
+        /(https?:\/\/[^\s/$.?#].[^\s"]*)/gi,
+        '<a href="$1" target="_blank" rel="noopener">$1</a>'
+      );
+      msg.innerHTML = linked;
+      box.appendChild(msg);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendMessage(){
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
+      addMessage(text, 'user');
+      input.value = '';
+      try{
+        const data = await getSheetData();
+        const reply = findAnswer(data, text);
+        setTimeout(() => addMessage(reply, 'bot'), 500);
+      }catch(err){
+        console.error(err);
+        addMessage('Bot sedang offline, coba lagi nanti.', 'bot');
+      }
+    }
+
+    document.getElementById('userInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    /* ---------- pesan otomatis ---------- */
+    window.addEventListener('DOMContentLoaded', () => {
+      addMessage(
+        'Semangat Pagi, dengan Klimis dapat kami bantu, ketik Menu Pilihan (1P/2P/3P), sesuai yang dikehendaki :\n' +
+        '• 1P Biaya\n' +
+        '• 2P Tahap Pemeliharaan Sertifikat\n' +
+        '• 3P Syarat Sertifikat Dipelihara\n' +
+        '• 4P Tahapan Daftar',
+        'bot'
+      );
+    });
+  </script>
+</body>
+</html>
