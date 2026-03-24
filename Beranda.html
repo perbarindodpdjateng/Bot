@@ -125,8 +125,17 @@
       font-size: 14px;
     }
 
-    .message a { color: inherit; text-decoration: underline; }
-    .user-message a { color: #e8e4ff; }
+    /* Link styling di pesan bot */
+    .bot-message a {
+      color: #6e5dbd;
+      text-decoration: underline;
+      font-weight: 600;
+      word-break: break-all;
+    }
+    .bot-message a:hover { color: #4e3d9d; }
+
+    /* Link styling di pesan user */
+    .user-message a { color: #e8e4ff; text-decoration: underline; }
 
     .message-content { word-wrap: break-word; }
     .message-content strong, .message-content b { font-weight: 700; }
@@ -370,10 +379,34 @@
       return null;
     }
 
-    // ── RENDER TEKS BOT (mendukung <strong>, <b>, <em>, <i>, <br>) ──────────
+    // ── RENDER TEKS BOT ──────────────────────────────────────────────────────
+    // Tag yang didukung di kolom C spreadsheet:
+    //   <strong>, <b>, <em>, <i>, <br>
+    //   <a href="URL">teks</a>  ← BARU: untuk link dengan teks kustom
+    //
+    // Contoh penulisan di spreadsheet (kolom C):
+    //   Info PTM <a href="https://example.com" target="_blank">klik disini</a>
     function renderBotText(text) {
       if (!text) return '';
 
+      let out = text;
+
+      // ── Langkah 1: Simpan tag <a href="..."> dengan placeholder ──
+      // Pola yang didukung:
+      //   <a href="URL">teks</a>
+      //   <a href="URL" target="_blank">teks</a>
+      //   <a href='URL'>teks</a>
+      const linkPlaceholders = [];
+      out = out.replace(/<a\s+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+        (match, href, linkText) => {
+          const idx = linkPlaceholders.length;
+          // Render linkText secara rekursif (bisa ada <strong> di dalamnya)
+          linkPlaceholders.push({ href, linkText });
+          return `\x02LINK${idx}\x02`;
+        }
+      );
+
+      // ── Langkah 2: Simpan tag inline lain yang diizinkan ──
       const allowed = {
         '<strong>':  '\x01A\x01', '</strong>': '\x01B\x01',
         '<b>':       '\x01C\x01', '</b>':      '\x01D\x01',
@@ -382,17 +415,14 @@
         '<br>':      '\x01I\x01', '<br/>':     '\x01I\x01', '<br />': '\x01I\x01',
       };
 
-      let out = text;
-
-      // Simpan tag diizinkan
       for (const [tag, ph] of Object.entries(allowed)) {
         out = out.split(tag).join(ph);
       }
 
-      // Escape semua HTML lain
+      // ── Langkah 3: Escape semua HTML yang tersisa ──
       out = out.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
 
-      // Kembalikan tag diizinkan
+      // ── Langkah 4: Kembalikan tag inline yang diizinkan ──
       out = out
         .replace(/\x01A\x01/g,'<strong>').replace(/\x01B\x01/g,'</strong>')
         .replace(/\x01C\x01/g,'<b>').replace(/\x01D\x01/g,'</b>')
@@ -400,12 +430,26 @@
         .replace(/\x01G\x01/g,'<i>').replace(/\x01H\x01/g,'</i>')
         .replace(/\x01I\x01/g,'<br>');
 
-      // Newline → <br>
+      // ── Langkah 5: Newline → <br> ──
       out = out.replace(/\n/g, '<br>');
 
-      // URL → link
-      out = out.replace(/(https?:\/\/[^\s<]+)/gi,
+      // ── Langkah 6: URL polos → link otomatis (hanya jika tidak sudah dalam placeholder) ──
+      out = out.replace(/(https?:\/\/[^\s<\x02]+)/gi,
         '<a href="$1" target="_blank" rel="noopener">$1</a>');
+
+      // ── Langkah 7: Kembalikan placeholder <a href="..."> ──
+      out = out.replace(/\x02LINK(\d+)\x02/g, (match, idx) => {
+        const { href, linkText } = linkPlaceholders[parseInt(idx)];
+        // Escape href untuk keamanan
+        const safeHref = href.replace(/"/g, '&quot;');
+        // linkText bisa berisi tag bold dsb — render ulang secara sederhana
+        const safeText = linkText
+          .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')
+          // Izinkan <strong>/<b> di dalam teks link
+          .replace(/&lt;strong&gt;/gi,'<strong>').replace(/&lt;\/strong&gt;/gi,'</strong>')
+          .replace(/&lt;b&gt;/gi,'<b>').replace(/&lt;\/b&gt;/gi,'</b>');
+        return `<a href="${safeHref}" target="_blank" rel="noopener">${safeText}</a>`;
+      });
 
       return `<div class="message-content">${out}</div>`;
     }
