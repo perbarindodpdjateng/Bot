@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>ChatBot Sheets</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      background: linear-gradient(135deg, #6e5dbd 0%, #7161c4 50%, #7565d4 100%);
+      min-height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      padding: 8px;
+      background-attachment: fixed;
+      font-size: 11px;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background:
+        radial-gradient(circle at 20% 80%, rgba(120,100,200,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 80% 20%, rgba(140,110,210,0.3) 0%, transparent 50%),
+        radial-gradient(circle at 40% 40%, rgba(160,130,220,0.2) 0%, transparent 40%);
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    .chat-container {
+      position: relative;
+      width: 100%;
+      max-width: 400px;
+      height: 90vh;
+      min-height: 350px;
+      background: rgba(255,255,255,0.98);
+      border-radius: 16px;
+      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1);
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      z-index: 1;
+    }
+
+    .chat-header {
+      background: linear-gradient(135deg, #6e5dbd 0%, #7c6bc7 100%);
+      color: #fff;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex-shrink: 0;
+    }
+
+    .bot-avatar {
+      width: 32px; height: 32px;
+      background: rgba(255,255,255,0.2);
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 16px;
+      border: 1px solid rgba(255,255,255,0.3);
+    }
+
+    .header-info { flex: 1; }
+    .header-title { font-weight: 600; font-size: 12px; letter-spacing: 0.2px; }
+    .header-subtitle { font-size: 10px; opacity: 0.85; }
+
+    .status-indicator {
+      width: 8px; height: 8px;
+      background: #4ade80;
+      border-radius: 50%;
+      box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
+      transition: all 0.3s ease;
+    }
+    .status-indicator.error { background: #ef4444; box-shadow: 0 0 0 2px rgba(239,68,68,0.3); }
+    .status-indicator.warning { background: #f59e0b; box-shadow: 0 0 0 2px rgba(245,158,11,0.3); }
+
+    .save-badge {
+      font-size: 9px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      background: rgba(255,255,255,0.15);
+      border: 1px solid rgba(255,255,255,0.3);
+      display: flex; align-items: center; gap: 3px;
+      transition: all 0.3s ease;
+      cursor: pointer;
+    }
+    .save-badge:hover { background: rgba(255,255,255,0.25); }
+    .save-badge.saving { background: rgba(255,200,50,0.25); border-color: rgba(255,200,50,0.5); }
+    .save-badge.saved  { background: rgba(74,222,128,0.25); border-color: rgba(74,222,128,0.5); }
+    .save-badge.error  { background: rgba(255,100,100,0.25); border-color: rgba(255,100,100,0.5); }
+    .save-badge.config { background: rgba(100,150,255,0.25); border-color: rgba(100,150,255,0.5); }
+
+    .chat-messages {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      background: linear-gradient(180deg, #f8f7fc 0%, #f0eef8 100%);
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .chat-messages::-webkit-scrollbar { width: 4px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #6e5dbd; border-radius: 2px; }
+
+    .message {
+      max-width: 90%;
+      padding: 8px 12px;
+      border-radius: 12px;
+      font-size: 11px;
+      line-height: 1.4;
+      position: relative;
+      word-wrap: break-word;
+      animation: fadeIn 0.3s ease;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    .user-message {
+      background: linear-gradient(135deg, #6e5dbd 0%, #7c6bc7 100%);
+      color: #fff;
+      align-self: flex-end;
+      border-bottom-right-radius: 4px;
+      margin-left: auto;
+    }
+
+    .bot-message {
+      background: #fff;
+      color: #333;
+      align-self: flex-start;
+      border-bottom-left-radius: 4px;
+      border: 1px solid rgba(110,93,189,0.12);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+
+    .bot-message::before {
+      content: '🤖';
+      position: absolute;
+      left: -22px; bottom: 2px;
+      font-size: 14px;
+    }
+
+    .msg-saved-icon {
+      position: absolute;
+      bottom: 2px; right: 4px;
+      font-size: 8px;
+      opacity: 0;
+      transition: opacity 0.5s;
+    }
+    .msg-saved-icon.visible { opacity: 0.5; }
+    .msg-saved-icon.error { opacity: 1; color: #ef4444; }
+
+    .bot-message a { color: #6e5dbd; text-decoration: underline; font-weight: 600; word-break: break-all; }
+    .bot-message a:hover { color: #4e3d9d; }
+    .user-message a { color: #e8e4ff; text-decoration: underline; }
+
+    .message-content { word-wrap: break-word; }
+    .message-content strong, .message-content b { font-weight: 700; }
+    .message-content em, .message-content i { font-style: italic; }
+
+    .welcome-message {
+      background: linear-gradient(135deg, rgba(110,93,189,0.08) 0%, rgba(124,107,199,0.04) 100%);
+      border: 1px solid rgba(110,93,189,0.15);
+      padding: 10px;
+      border-radius: 10px;
+    }
+
+    .welcome-title { font-weight: 600; color: #6e5dbd; margin-bottom: 4px; font-size: 11px; }
+
+    .menu-list { list-style: none; margin-top: 4px; }
+    .menu-list li {
+      padding: 2px 0;
+      display: flex; align-items: center; gap: 6px;
+      color: #555; font-size: 10px; line-height: 1.2;
+      cursor: pointer;
+      transition: all 0.2s ease;
+    }
+    .menu-list li:hover { color: #6e5dbd; background: rgba(110,93,189,0.05); border-radius: 4px; padding-left: 4px; }
+    .menu-list li::before { content: '›'; color: #6e5dbd; font-weight: bold; font-size: 10px; }
+
+    .typing-indicator {
+      display: none;
+      align-self: flex-start;
+      background: #fff;
+      padding: 10px 14px;
+      border-radius: 12px;
+      border-bottom-left-radius: 4px;
+      border: 1px solid rgba(110,93,189,0.12);
+      margin-left: 22px;
+      margin-bottom: 4px;
+    }
+    .typing-indicator.active { display: flex; gap: 4px; }
+
+    .typing-dot {
+      width: 6px; height: 6px;
+      background: #6e5dbd; border-radius: 50%;
+      animation: typingBounce 1.4s infinite ease-in-out both;
+    }
+    .typing-dot:nth-child(1) { animation-delay: -0.32s; }
+    .typing-dot:nth-child(2) { animation-delay: -0.16s; }
+    @keyframes typingBounce {
+      0%, 80%, 100% { transform: scale(0); }
+      40% { transform: scale(1); }
+    }
+
+    .chat-input {
+      display: flex; align-items: center;
+      padding: 10px 12px;
+      background: #fff;
+      border-top: 1px solid rgba(110,93,189,0.1);
+      gap: 8px; flex-shrink: 0;
+    }
+
+    .chat-input input {
+      flex: 1;
+      padding: 10px 14px;
+      border: 1px solid rgba(110,93,189,0.2);
+      border-radius: 20px;
+      outline: none; font-size: 11px;
+      transition: all 0.2s ease;
+      background: #f8f7fc;
+    }
+    .chat-input input:focus { border-color: #6e5dbd; background: #fff; }
+    .chat-input input::placeholder { color: #999; font-size: 11px; }
+    .chat-input input:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .send-btn {
+      width: 34px; height: 34px;
+      border: none; border-radius: 50%;
+      background: linear-gradient(135deg, #6e5dbd 0%, #7c6bc7 100%);
+      color: #fff; cursor: pointer;
+      display: flex; align-items: center; justify-content: center;
+      transition: transform 0.2s ease; flex-shrink: 0;
+    }
+    .send-btn:hover { transform: scale(1.05); }
+    .send-btn:active { transform: scale(0.95); }
+    .send-btn:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .send-btn svg { width: 16px; height: 16px; fill: currentColor; }
+
+    .quick-replies {
+      display: flex; gap: 3px;
+      padding: 5px; flex-wrap: wrap;
+      overflow-x: auto; background: #f0eef8; flex-shrink: 0;
+    }
+    .quick-replies::-webkit-scrollbar { display: none; }
+
+    .chip {
+      padding: 4px 8px;
+      background: #fff;
+      border: 1px solid rgba(110,93,189,0.25);
+      border-radius: 16px; font-size: 11px;
+      color: #6e5dbd; cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      font-weight: 500;
+      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+    }
+    .chip:hover {
+      background: #6e5dbd; color: #fff;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 6px rgba(110,93,189,0.3);
+    }
+    .chip:active { transform: translateY(0); }
+    .chip:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .timestamp { font-size: 9px; opacity: 0.5; margin-top: 2px; text-align: right; }
+    .bot-message .timestamp { text-align: left; }
+
+    .connection-status {
+      position: absolute;
+      top: 50px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+      color: #92400e;
+      padding: 6px 12px;
+      border-radius: 20px;
+      font-size: 10px;
+      z-index: 100;
+      display: none;
+      align-items: center;
+      gap: 6px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    .connection-status.show { display: flex; }
+    .connection-status.error { background: #fee2e2; border-color: #ef4444; color: #991b1b; }
+
+    @media (max-width: 480px) {
+      body { padding: 0; }
+      .chat-container { height: 100vh; max-width: 100%; border-radius: 0; }
+    }
+  </style>
+</head>
+<body>
+  <div class="chat-container">
+    <div class="chat-header">
+      <div class="bot-avatar">🤖</div>
+      <div class="header-info">
+        <div class="header-title">Klim's Assistant</div>
+        <div class="header-subtitle">Online • Siap membantu</div>
+      </div>
+      <div class="save-badge" id="saveBadge" title="Klik untuk test koneksi">
+        <span id="saveBadgeIcon">💾</span>
+        <span id="saveBadgeText">Histori</span>
+      </div>
+      <div class="status-indicator" id="statusIndicator"></div>
+    </div>
+
+    <div class="connection-status" id="connStatus">
+      <span>⚠️</span>
+      <span id="connStatusText">Menghubungkan...</span>
+    </div>
+
+    <div class="chat-messages" id="chatMessages"></div>
+
+    <div class="typing-indicator" id="typingIndicator">
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+      <div class="typing-dot"></div>
+    </div>
+
+    <div class="quick-replies">
+      <span class="chip" onclick="sendQuickReply('1')">1</span>
+      <span class="chip" onclick="sendQuickReply('2')">2</span>
+      <span class="chip" onclick="sendQuickReply('3')">3</span>
+      <span class="chip" onclick="sendQuickReply('4')">4</span>
+      <span class="chip" onclick="sendQuickReply('5')">5</span>
+      <span class="chip" onclick="sendQuickReply('6')">6</span>
+      <span class="chip" onclick="sendQuickReply('7')">7</span>
+      <span class="chip" onclick="sendQuickReply('8')">8</span>
+      <span class="chip" onclick="sendQuickReply('9')">9</span>
+      <span class="chip" onclick="sendQuickReply('10')">10</span>
+      <span class="chip" onclick="sendQuickReply('11')">11</span>
+      <span class="chip" onclick="sendQuickReply('20')">20</span>
+    </div>
+
+    <div class="chat-input">
+      <input id="userInput" type="text" placeholder="Tulis pesan yang diinginkan..." autocomplete="off"/>
+      <button class="send-btn" id="sendBtn" onclick="sendMessage()">
+        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <script>
+    // ════════════════════════════════════════════════════════════════
+    // ⚙️  KONFIGURASI — PASTIKAN URL SUDAH BENAR!
+    // ════════════════════════════════════════════════════════════════
+
+    const CONFIG = {
+      SHEET_ID: '1REf1Z_Bxp91X_FMcgiEHOwAHl-hwAm44YXHGIvw3aXY',
+      SHEET_NAME: 'Sheet1',
+      
+      // 🔴 PENTING: Ganti dengan URL Web App Anda setelah deploy!
+      // Format: https://script.google.com/macros/s/AKfyc.../exec
+      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzk4U9KH__x6EESG_6cq18jYcuB249IOfB-eImr6L876WEZTKDFyg974IEfKJTSTvafUA/exec',
+      
+      // Fitur toggle
+      ENABLE_HISTORY: true,      // Simpan ke spreadsheet?
+      DEBUG_MODE: false,         // Console log detail?
+      RETRY_ATTEMPTS: 3,         // Jumlah retry jika gagal
+      RETRY_DELAY: 1000          // Delay antar retry (ms)
+    };
+
+    // State
+    let sheetCache = [];
+    let cacheValid = false;
+    let isDataLoaded = false;
+    let isSaving = false;
+    let saveQueue = Promise.resolve();
+
+    // Session ID unik
+    const SESSION_ID = (() => {
+      const now = new Date();
+      const pad = n => String(n).padStart(2, '0');
+      const date = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
+      const time = `${pad(now.getHours())}${pad(now.getMinutes())}`;
+      const rand = Math.random().toString(36).substr(2, 5).toUpperCase();
+      return `${date}-${time}-${rand}`;
+    })();
+
+    // ════════════════════════════════════════════════════════════════
+    // UTILITY FUNCTIONS
+    // ════════════════════════════════════════════════════════════════
+
+    function log(...args) {
+      if (CONFIG.DEBUG_MODE) console.log('[ChatBot]', ...args);
+    }
+
+    function showConnectionStatus(text, isError = false) {
+      const el = document.getElementById('connStatus');
+      const txt = document.getElementById('connStatusText');
+      txt.textContent = text;
+      el.className = 'connection-status show' + (isError ? ' error' : '');
+      if (!isError) setTimeout(() => el.classList.remove('show'), 3000);
+    }
+
+    function setBadge(state, message = null) {
+      const badge = document.getElementById('saveBadge');
+      const icon = document.getElementById('saveBadgeIcon');
+      const text = document.getElementById('saveBadgeText');
+      const indicator = document.getElementById('statusIndicator');
+      
+      badge.className = 'save-badge ' + (state || '');
+      
+      const states = {
+        saving: { icon: '⏳', text: 'Menyimpan...' },
+        saved: { icon: '✅', text: 'Tersimpan' },
+        error: { icon: '⚠️', text: 'Gagal' },
+        config: { icon: '🔧', text: 'Belum Config' },
+        offline: { icon: '📴', text: 'Offline' }
+      };
+      
+      if (states[state]) {
+        icon.textContent = states[state].icon;
+        text.textContent = message || states[state].text;
+      } else {
+        icon.textContent = '💾';
+        text.textContent = 'Histori';
+      }
+      
+      // Update indicator
+      if (state === 'error' || state === 'offline') {
+        indicator.classList.add('error');
+      } else if (state === 'saving') {
+        indicator.classList.add('warning');
+      } else {
+        indicator.classList.remove('error', 'warning');
+      }
+      
+      // Auto reset
+      if (state === 'saved' || state === 'error') {
+        setTimeout(() => setBadge(''), 3000);
+      }
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // SPREADSHEET FUNCTIONS
+    // ════════════════════════════════════════════════════════════════
+
+    async function testConnection() {
+      if (!isConfigured()) {
+        setBadge('config');
+        return false;
+      }
+      
+      try {
+        const url = CONFIG.APPS_SCRIPT_URL + '?action=test';
+        const response = await fetch(url, { 
+          method: 'GET',
+          headers: { 'Accept': 'application/json' }
+        });
+        
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        
+        const data = await response.json();
+        log('Connection test:', data);
+        
+        if (data.status === 'ok') {
+          showConnectionStatus('Terhubung ke: ' + data.spreadsheetName);
+          return true;
+        } else {
+          throw new Error(data.message);
+        }
+      } catch (err) {
+        log('Connection test failed:', err);
+        setBadge('error', 'Koneksi Gagal');
+        showConnectionStatus('Gagal terhubung: ' + err.message, true);
+        return false;
+      }
+    }
+
+    async function saveToSheet(sender, message, retryCount = 0) {
+      // Skip jika tidak diaktifkan atau belum dikonfigurasi
+      if (!CONFIG.ENABLE_HISTORY) {
+        log('History disabled, skipping save');
+        return { skipped: true };
+      }
+      
+      if (!isConfigured()) {
+        log('URL not configured, skipping save');
+        setBadge('config');
+        return { skipped: true, reason: 'not_configured' };
+      }
+
+      // Queue system untuk mencegah race condition
+      return new Promise((resolve, reject) => {
+        saveQueue = saveQueue.then(async () => {
+          setBadge('saving');
+          
+          try {
+            const payload = {
+              sessionId: SESSION_ID,
+              sender: sender,
+              message: message,
+              userAgent: navigator.userAgent,
+              timestamp: new Date().toISOString()
+            };
+
+            log('Saving:', payload);
+
+            const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
+              method: 'POST',
+              headers: { 
+                'Content-Type': 'application/json',
+                'Accept': 'application/json'
+              },
+              body: JSON.stringify(payload)
+            });
+
+            if (!response.ok) throw new Error('HTTP ' + response.status);
+            
+            const result = await response.json();
+            log('Save result:', result);
+
+            if (result.status === 'success') {
+              setBadge('saved');
+              return { success: true, data: result };
+            } else {
+              throw new Error(result.message || 'Unknown error');
+            }
+
+          } catch (err) {
+            log('Save error (attempt ' + (retryCount + 1) + '):', err);
+            
+            // Retry logic
+            if (retryCount < CONFIG.RETRY_ATTEMPTS) {
+              setBadge('saving', 'Retry ' + (retryCount + 1) + '...');
+              await delay(CONFIG.RETRY_DELAY);
+              return saveToSheet(sender, message, retryCount + 1);
+            }
+            
+            setBadge('error');
+            return { success: false, error: err.message };
+          }
+        });
+        
+        saveQueue.then(resolve).catch(reject);
+      });
+    }
+
+    function isConfigured() {
+      return CONFIG.APPS_SCRIPT_URL && 
+             !CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN') &&
+             CONFIG.APPS_SCRIPT_URL.startsWith('https://');
+    }
+
+    function delay(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // ════════════════════════════════════════════════════════════════
+    // CHAT FUNCTIONS
+    // ════════════════════════════════════════════════════════════════
+
+    async function getSheetData() {
+      if (cacheValid) return sheetCache;
+
+      const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
+
+      try {
+        const response = await fetch(url);
+        if (!response.ok) throw new Error('HTTP ' + response.status);
+        
+        const text = await response.text();
+        const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const raw = JSON.parse(jsonStr);
+
+        sheetCache = raw.table.rows
+          .map(row => ({
+            question: (row.c[0]?.v ?? '').toString().trim(),
+            keywords: (row.c[1]?.v ?? '').toString().trim(),
+            answer: (row.c[2]?.v ?? '').toString().trim()
+          }))
+          .filter(item => item.question || item.keywords);
+
+        cacheValid = true;
+        isDataLoaded = true;
+        log('Sheet data loaded:', sheetCache.length, 'rows');
+
+      } catch (err) {
+        console.error('Failed to load sheet data:', err);
+        sheetCache = [];
+        isDataLoaded = false;
+        showConnectionStatus('Gagal memuat data spreadsheet', true);
+      }
+      
+      return sheetCache;
+    }
+
+    function findAnswer(data, input) {
+      const q = input.trim().toUpperCase();
+
+      // Exact match
+      for (const row of data) {
+        if (row.question.toUpperCase() === q) return row.answer;
+      }
+      
+      // Keyword match
+      for (const row of data) {
+        if (!row.keywords) continue;
+        const keys = row.keywords.toUpperCase().split(',').map(k => k.trim());
+        if (keys.includes(q)) return row.answer;
+      }
+      
+      // Starts with match
+      for (const row of data) {
+        if (row.question.toUpperCase().startsWith(q + ' ') ||
+            row.question.toUpperCase().startsWith(q + '-')) return row.answer;
+      }
+      
+      // Contains match
+      const qLow = input.trim().toLowerCase();
+      for (const row of data) {
+        if (row.question.toLowerCase().includes(qLow) ||
+            row.keywords.toLowerCase().includes(qLow)) return row.answer;
+      }
+      
+      return null;
+    }
+
+    function renderBotText(text) {
+      if (!text) return '';
+      
+      let out = text;
+      
+      // Simpan link HTML asli
+      const linkPlaceholders = [];
+      out = out.replace(/<a\s+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
+        (match, href, linkText) => {
+          const idx = linkPlaceholders.length;
+          linkPlaceholders.push({ href, linkText });
+          return `__LINK${idx}__`;
+        }
+      );
+
+      // Escape HTML kecuali tag yang diizinkan
+      const allowed = {
+        '<strong>': '__STRONG_OPEN__',
+        '</strong>': '__STRONG_CLOSE__',
+        '<b>': '__B_OPEN__',
+        '</b>': '__B_CLOSE__',
+        '<em>': '__EM_OPEN__',
+        '</em>': '__EM_CLOSE__',
+        '<i>': '__I_OPEN__',
+        '</i>': '__I_CLOSE__',
+        '<br>': '__BR__',
+        '<br/>': '__BR__',
+        '<br />': '__BR__',
+      };
+
+      for (const [tag, placeholder] of Object.entries(allowed)) {
+        out = out.split(tag).join(placeholder);
+      }
+
+      out = out.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+      // Restore allowed tags
+      out = out
+        .replace(/__STRONG_OPEN__/g, '<strong>')
+        .replace(/__STRONG_CLOSE__/g, '</strong>')
+        .replace(/__B_OPEN__/g, '<b>')
+        .replace(/__B_CLOSE__/g, '</b>')
+        .replace(/__EM_OPEN__/g, '<em>')
+        .replace(/__EM_CLOSE__/g, '</em>')
+        .replace(/__I_OPEN__/g, '<i>')
+        .replace(/__I_CLOSE__/g, '</i>')
+        .replace(/__BR__/g, '<br>');
+
+      // Convert newlines
+      out = out.replace(/\n/g, '<br>');
+
+      // Auto-link URLs
+      out = out.replace(/(https?:\/\/[^\s<__]+)/gi,
+        '<a href="$1" target="_blank" rel="noopener">$1</a>');
+
+      // Restore original links
+      out = out.replace(/__LINK(\d+)__/g, (match, idx) => {
+        const { href, linkText } = linkPlaceholders[parseInt(idx)];
+        const safeHref = href.replace(/"/g, '&quot;');
+        return `<a href="${safeHref}" target="_blank" rel="noopener">${linkText}</a>`;
+      });
+
+      return `<div class="message-content">${out}</div>`;
+    }
+
+    function getCurrentTime() {
+      return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function addMessage(text, sender) {
+      const box = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = `message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
+
+      let content;
+      if (sender === 'user') {
+        const safe = text.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        content = `<div class="message-content">${safe}</div>`;
+      } else {
+        content = renderBotText(text);
+      }
+
+      div.innerHTML = content +
+        `<div class="timestamp">${getCurrentTime()}</div>` +
+        `<span class="msg-saved-icon" title="Status penyimpanan">○</span>`;
+      
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+
+      // Simpan ke spreadsheet
+      saveToSheet(sender, text).then(result => {
+        const icon = div.querySelector('.msg-saved-icon');
+        if (!icon) return;
+        
+        if (result.success) {
+          icon.textContent = '✓';
+          icon.classList.add('visible');
+        } else if (result.skipped) {
+          icon.textContent = '⊘';
+          icon.title = 'History disabled or not configured';
+          icon.classList.add('visible');
+        } else {
+          icon.textContent = '✗';
+          icon.classList.add('visible', 'error');
+          icon.title = 'Failed to save: ' + (result.error || 'Unknown error');
+        }
+      });
+    }
+
+    function showTyping() {
+      document.getElementById('typingIndicator').classList.add('active');
+      document.getElementById('chatMessages').scrollTop = 99999;
+    }
+
+    function hideTyping() {
+      document.getElementById('typingIndicator').classList.remove('active');
+    }
+
+    function setInputEnabled(enabled) {
+      document.getElementById('userInput').disabled = !enabled;
+      document.getElementById('sendBtn').disabled = !enabled;
+      document.querySelectorAll('.chip').forEach(chip => chip.disabled = !enabled);
+    }
+
+    async function processQuery(query) {
+      addMessage(query, 'user');
+      showTyping();
+      setInputEnabled(false);
+
+      if (!isDataLoaded) await getSheetData();
+
+      const answer = findAnswer(sheetCache, query);
+      const reply = answer
+        ? answer
+        : `Maaf, kode <strong>${query.replace(/[<>]/g, '')}</strong> belum tersedia. Pastikan kode benar atau hubungi admin.`;
+
+      setTimeout(() => {
+        hideTyping();
+        addMessage(reply, 'bot');
+        setInputEnabled(true);
+      }, 400 + Math.random() * 300);
+    }
+
+    async function sendMessage() {
+      const inp = document.getElementById('userInput');
+      const txt = inp.value.trim();
+      if (!txt) return;
+      inp.value = '';
+      await processQuery(txt);
+    }
+
+    async function sendQuickReply(code) {
+      await processQuery(code);
+    }
+
+    // Event listeners
+    document.getElementById('userInput').addEventListener('keypress', e => {
+      if (e.key === 'Enter') sendMessage();
+    });
+
+    document.getElementById('saveBadge').addEventListener('click', () => {
+      testConnection();
+    });
+
+    // ════════════════════════════════════════════════════════════════
+    // INITIALIZATION
+    // ════════════════════════════════════════════════════════════════
+
+    window.addEventListener('DOMContentLoaded', async () => {
+      // Render welcome message
+      const welcomeHTML =
+        '<div class="welcome-title">👋 Semangat Pagi!</div>' +
+        '<div style="line-height:1.0;margin-bottom:2px">Saya asisten virtual Anda. Pilih menu di bawah/ ketik kode:</div>' +
+        '<ul class="menu-list">' +
+        '<li onclick="sendQuickReply(\'1\')"><strong>1</strong>&nbsp; Info PTM Sertifikasi Komisaris</li>' +
+        '<li onclick="sendQuickReply(\'2\')"><strong>2</strong>&nbsp; Info PTM Sertifikasi Dir1 & Dir2</li>' +
+        '<li onclick="sendQuickReply(\'3\')"><strong>3</strong>&nbsp; Info PTM Sertifikasi Pejabat Eksekutif</li>' +
+        '<li onclick="sendQuickReply(\'4\')"><strong>4</strong>&nbsp; Info PTM Sertifikasi Supervisor</li>' +
+        '<li onclick="sendQuickReply(\'5\')"><strong>5</strong>&nbsp; Info PTM Sertifikasi Pelaksana</li>' +
+        '<li onclick="sendQuickReply(\'6\')"><strong>6</strong>&nbsp; Info PJJ Penyegaran Dir-Kom</li>' +
+        '<li onclick="sendQuickReply(\'7\')"><strong>7</strong>&nbsp; Info PJJ Penyegaran Pejabat Eksekutif</li>' +
+        '<li onclick="sendQuickReply(\'8\')"><strong>8</strong>&nbsp; Info Apex BPR Bank Jateng</li>' +
+        '<li onclick="sendQuickReply(\'9\')"><strong>9</strong>&nbsp; Info Kerjasama Pos Indo (Materai)</li>' +
+        '<li onclick="sendQuickReply(\'10\')"><strong>10</strong>&nbsp; Info Pendidikan Khusus Profesi Advokat</li>' +
+        '<li onclick="sendQuickReply(\'11\')"><strong>11</strong>&nbsp; Cek Jatuh Tempo Sertifikat</li>' +
+        '<li onclick="sendQuickReply(\'20\')"><strong>20</strong>&nbsp; Kembali ke Menu Pilihan</li>' +
+        '</ul>';
+
+      const box = document.getElementById('chatMessages');
+      const div = document.createElement('div');
+      div.className = 'message bot-message welcome-message';
+      div.innerHTML = welcomeHTML + `<div class="timestamp">${getCurrentTime()}</div>`;
+      box.appendChild(div);
+
+      // Load data dan test koneksi
+      await getSheetData();
+      
+      if (isConfigured()) {
+        await testConnection();
+      } else {
+        setBadge('config');
+        console.warn('⚠️ APPS_SCRIPT_URL belum dikonfigurasi. Klik badge 💾 untuk test.');
+      }
+
+      log('Session started:', SESSION_ID);
+    });
+  </script>
+</body>
+</html>
