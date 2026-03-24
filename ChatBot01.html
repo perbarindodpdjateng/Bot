@@ -3,278 +3,320 @@
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>ChatBot Sheets</title>
+  <title>ChatBot Sheets Pro</title>
   <style>
-    /* ... (style sama seperti sebelumnya, tidak berubah) ... */
     * { box-sizing: border-box; margin: 0; padding: 0; }
-
+    
     body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(135deg, #6e5dbd 0%, #7161c4 50%, #7565d4 100%);
+      font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       min-height: 100vh;
       display: flex;
       justify-content: center;
       align-items: center;
-      padding: 8px;
+      padding: 16px;
       background-attachment: fixed;
-      font-size: 11px;
-    }
-
-    body::before {
-      content: '';
-      position: fixed;
-      top: 0; left: 0;
-      width: 100%; height: 100%;
-      background:
-        radial-gradient(circle at 20% 80%, rgba(120,100,200,0.3) 0%, transparent 50%),
-        radial-gradient(circle at 80% 20%, rgba(140,110,210,0.3) 0%, transparent 50%),
-        radial-gradient(circle at 40% 40%, rgba(160,130,220,0.2) 0%, transparent 40%);
-      pointer-events: none;
-      z-index: 0;
     }
 
     .chat-container {
-      position: relative;
       width: 100%;
-      max-width: 400px;
+      max-width: 420px;
       height: 90vh;
-      min-height: 350px;
+      min-height: 500px;
       background: rgba(255,255,255,0.98);
-      border-radius: 16px;
-      box-shadow: 0 20px 40px -12px rgba(0,0,0,0.25), 0 0 0 1px rgba(255,255,255,0.1);
+      border-radius: 20px;
+      box-shadow: 0 25px 50px -12px rgba(0,0,0,0.25);
       display: flex;
       flex-direction: column;
       overflow: hidden;
-      z-index: 1;
+      position: relative;
     }
 
     .chat-header {
-      background: linear-gradient(135deg, #6e5dbd 0%, #7c6bc7 100%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
-      padding: 12px 16px;
+      padding: 16px 20px;
       display: flex;
       align-items: center;
-      gap: 10px;
+      gap: 12px;
       flex-shrink: 0;
     }
 
     .bot-avatar {
-      width: 32px; height: 32px;
+      width: 40px; height: 40px;
       background: rgba(255,255,255,0.2);
       border-radius: 50%;
       display: flex; align-items: center; justify-content: center;
-      font-size: 16px;
-      border: 1px solid rgba(255,255,255,0.3);
+      font-size: 20px;
+      backdrop-filter: blur(10px);
+      border: 2px solid rgba(255,255,255,0.3);
     }
 
     .header-info { flex: 1; }
-    .header-title { font-weight: 600; font-size: 12px; letter-spacing: 0.2px; }
-    .header-subtitle { font-size: 10px; opacity: 0.85; }
+    .header-title { font-weight: 700; font-size: 16px; }
+    .header-subtitle { font-size: 12px; opacity: 0.9; display: flex; align-items: center; gap: 6px; }
 
-    .status-indicator {
+    .status-dot {
       width: 8px; height: 8px;
       background: #4ade80;
       border-radius: 50%;
-      box-shadow: 0 0 0 2px rgba(74,222,128,0.3);
-      transition: all 0.3s ease;
+      box-shadow: 0 0 0 3px rgba(74,222,128,0.3);
+      animation: pulse 2s infinite;
     }
-    .status-indicator.error { background: #ef4444; }
-    .status-indicator.warning { background: #f59e0b; }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
 
-    .save-badge {
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 10px;
+    .save-status {
+      font-size: 11px;
+      padding: 6px 12px;
+      border-radius: 20px;
       background: rgba(255,255,255,0.15);
       border: 1px solid rgba(255,255,255,0.3);
-      display: flex; align-items: center; gap: 3px;
-      transition: all 0.3s ease;
       cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex; align-items: center; gap: 6px;
     }
-    .save-badge:hover { background: rgba(255,255,255,0.25); }
-    .save-badge.saving { background: rgba(255,200,50,0.25); }
-    .save-badge.saved  { background: rgba(74,222,128,0.25); }
-    .save-badge.error  { background: rgba(255,100,100,0.25); }
-    .save-badge.config { background: rgba(100,150,255,0.25); }
+    .save-status:hover { background: rgba(255,255,255,0.25); }
+    .save-status.saving { background: rgba(251,191,36,0.3); }
+    .save-status.saved { background: rgba(74,222,128,0.3); }
+    .save-status.error { background: rgba(248,113,113,0.3); }
+    .save-status.config { background: rgba(147,197,253,0.3); }
 
     .chat-messages {
       flex: 1;
-      padding: 10px;
+      padding: 20px;
       overflow-y: auto;
-      background: linear-gradient(180deg, #f8f7fc 0%, #f0eef8 100%);
+      background: #f8fafc;
       display: flex;
       flex-direction: column;
-      gap: 6px;
+      gap: 16px;
     }
-
-    .chat-messages::-webkit-scrollbar { width: 4px; }
-    .chat-messages::-webkit-scrollbar-thumb { background: #6e5dbd; border-radius: 2px; }
 
     .message {
-      max-width: 90%;
-      padding: 8px 12px;
-      border-radius: 12px;
-      font-size: 11px;
-      line-height: 1.4;
+      max-width: 85%;
+      padding: 12px 16px;
+      border-radius: 18px;
+      font-size: 14px;
+      line-height: 1.5;
       position: relative;
       word-wrap: break-word;
-      animation: fadeIn 0.3s ease;
+      animation: messageSlide 0.3s ease;
     }
-    @keyframes fadeIn {
+    @keyframes messageSlide {
       from { opacity: 0; transform: translateY(10px); }
       to { opacity: 1; transform: translateY(0); }
     }
 
     .user-message {
-      background: linear-gradient(135deg, #6e5dbd 0%, #7c6bc7 100%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff;
       align-self: flex-end;
       border-bottom-right-radius: 4px;
       margin-left: auto;
+      box-shadow: 0 4px 15px rgba(102,126,234,0.3);
     }
 
     .bot-message {
       background: #fff;
-      color: #333;
+      color: #1f2937;
       align-self: flex-start;
       border-bottom-left-radius: 4px;
-      border: 1px solid rgba(110,93,189,0.12);
-      box-shadow: 0 1px 3px rgba(0,0,0,0.05);
+      border: 1px solid #e5e7eb;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
 
-    .bot-message::before {
-      content: '🤖';
-      position: absolute;
-      left: -22px; bottom: 2px;
-      font-size: 14px;
+    /* Formatting untuk bot message */
+    .bot-message strong { color: #667eea; font-weight: 700; }
+    .bot-message em { color: #764ba2; font-style: italic; }
+    .bot-message a { 
+      color: #667eea; 
+      text-decoration: none; 
+      font-weight: 600;
+      border-bottom: 1px solid #667eea;
     }
+    .bot-message a:hover { opacity: 0.8; }
+    .bot-message ul { margin: 8px 0; padding-left: 20px; }
+    .bot-message li { margin: 4px 0; }
+    .bot-message br { display: block; margin: 4px 0; }
 
-    .msg-saved-icon {
-      position: absolute;
-      bottom: 2px; right: 4px;
-      font-size: 8px;
-      opacity: 0;
-      transition: opacity 0.5s;
+    .message-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 6px;
+      font-size: 11px;
+      opacity: 0.6;
     }
-    .msg-saved-icon.visible { opacity: 0.5; }
-    .msg-saved-icon.error { opacity: 1; color: #ef4444; }
+    .user-message .message-meta { justify-content: flex-end; }
 
-    .bot-message a { color: #6e5dbd; text-decoration: underline; font-weight: 600; }
-    .user-message a { color: #e8e4ff; }
-
-    .welcome-message {
-      background: linear-gradient(135deg, rgba(110,93,189,0.08) 0%, rgba(124,107,199,0.04) 100%);
-      border: 1px solid rgba(110,93,189,0.15);
-      padding: 10px;
-      border-radius: 10px;
+    .save-indicator {
+      width: 16px; height: 16px;
+      display: flex; align-items: center; justify-content: center;
+      border-radius: 50%;
+      font-size: 10px;
     }
-
-    .welcome-title { font-weight: 600; color: #6e5dbd; margin-bottom: 4px; font-size: 11px; }
-
-    .menu-list { list-style: none; margin-top: 4px; }
-    .menu-list li {
-      padding: 2px 0;
-      display: flex; align-items: center; gap: 6px;
-      color: #555; font-size: 10px; line-height: 1.2;
-      cursor: pointer;
-      transition: all 0.2s ease;
-    }
-    .menu-list li:hover { color: #6e5dbd; background: rgba(110,93,189,0.05); }
+    .save-indicator.pending { background: #fbbf24; color: #fff; }
+    .save-indicator.saved { background: #4ade80; color: #fff; }
+    .save-indicator.error { background: #f87171; color: #fff; }
+    .save-indicator.skipped { background: #9ca3af; color: #fff; }
 
     .typing-indicator {
       display: none;
       align-self: flex-start;
       background: #fff;
-      padding: 10px 14px;
-      border-radius: 12px;
+      padding: 16px 20px;
+      border-radius: 18px;
       border-bottom-left-radius: 4px;
-      border: 1px solid rgba(110,93,189,0.12);
-      margin-left: 22px;
-      margin-bottom: 4px;
+      border: 1px solid #e5e7eb;
+      margin-left: 12px;
+      margin-bottom: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.04);
     }
-    .typing-indicator.active { display: flex; gap: 4px; }
+    .typing-indicator.active { display: flex; gap: 6px; }
 
     .typing-dot {
-      width: 6px; height: 6px;
-      background: #6e5dbd; border-radius: 50%;
+      width: 8px; height: 8px;
+      background: #667eea;
+      border-radius: 50%;
       animation: typingBounce 1.4s infinite ease-in-out both;
     }
     .typing-dot:nth-child(1) { animation-delay: -0.32s; }
     .typing-dot:nth-child(2) { animation-delay: -0.16s; }
     @keyframes typingBounce {
-      0%, 80%, 100% { transform: scale(0); }
-      40% { transform: scale(1); }
+      0%, 80%, 100% { transform: scale(0.6); opacity: 0.5; }
+      40% { transform: scale(1); opacity: 1; }
+    }
+
+    .quick-replies {
+      display: flex; gap: 8px;
+      padding: 12px 16px;
+      flex-wrap: wrap;
+      background: #f1f5f9;
+      border-top: 1px solid #e2e8f0;
+      flex-shrink: 0;
+    }
+
+    .chip {
+      padding: 8px 14px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #475569;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      font-weight: 500;
+    }
+    .chip:hover { 
+      background: #667eea; 
+      color: #fff; 
+      border-color: #667eea;
+      transform: translateY(-1px);
     }
 
     .chat-input {
       display: flex; align-items: center;
-      padding: 10px 12px;
+      padding: 16px;
       background: #fff;
-      border-top: 1px solid rgba(110,93,189,0.1);
-      gap: 8px; flex-shrink: 0;
+      border-top: 1px solid #e2e8f0;
+      gap: 12px; flex-shrink: 0;
     }
 
     .chat-input input {
       flex: 1;
-      padding: 10px 14px;
-      border: 1px solid rgba(110,93,189,0.2);
-      border-radius: 20px;
-      outline: none; font-size: 11px;
+      padding: 14px 18px;
+      border: 1px solid #e2e8f0;
+      border-radius: 24px;
+      outline: none; font-size: 14px;
       transition: all 0.2s ease;
-      background: #f8f7fc;
+      background: #f8fafc;
     }
-    .chat-input input:focus { border-color: #6e5dbd; background: #fff; }
+    .chat-input input:focus { 
+      border-color: #667eea; 
+      background: #fff;
+      box-shadow: 0 0 0 3px rgba(102,126,234,0.1);
+    }
 
     .send-btn {
-      width: 34px; height: 34px;
+      width: 44px; height: 44px;
       border: none; border-radius: 50%;
-      background: linear-gradient(135deg, #6e5dbd 0%, #7c6bc7 100%);
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
       color: #fff; cursor: pointer;
       display: flex; align-items: center; justify-content: center;
-      transition: transform 0.2s ease;
-    }
-    .send-btn:hover { transform: scale(1.05); }
-    .send-btn:active { transform: scale(0.95); }
-    .send-btn svg { width: 16px; height: 16px; fill: currentColor; }
-
-    .quick-replies {
-      display: flex; gap: 3px;
-      padding: 5px; flex-wrap: wrap;
-      overflow-x: auto; background: #f0eef8; flex-shrink: 0;
-    }
-
-    .chip {
-      padding: 4px 8px;
-      background: #fff;
-      border: 1px solid rgba(110,93,189,0.25);
-      border-radius: 16px; font-size: 11px;
-      color: #6e5dbd; cursor: pointer;
-      white-space: nowrap;
       transition: all 0.2s ease;
-      font-weight: 500;
+      box-shadow: 0 4px 12px rgba(102,126,234,0.3);
     }
-    .chip:hover { background: #6e5dbd; color: #fff; }
+    .send-btn:hover { transform: scale(1.05); box-shadow: 0 6px 16px rgba(102,126,234,0.4); }
+    .send-btn:active { transform: scale(0.95); }
 
-    .timestamp { font-size: 9px; opacity: 0.5; margin-top: 2px; text-align: right; }
-    .bot-message .timestamp { text-align: left; }
+    .welcome-card {
+      background: linear-gradient(135deg, rgba(102,126,234,0.08) 0%, rgba(118,75,162,0.04) 100%);
+      border: 1px solid rgba(102,126,234,0.15);
+      padding: 16px;
+      border-radius: 12px;
+      margin-bottom: 8px;
+    }
+    .welcome-title { 
+      font-weight: 700; 
+      color: #667eea; 
+      margin-bottom: 8px; 
+      font-size: 16px;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .menu-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 8px;
+      margin-top: 12px;
+    }
+    .menu-item {
+      padding: 10px 12px;
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      border-radius: 10px;
+      font-size: 12px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      display: flex; align-items: center; gap: 8px;
+    }
+    .menu-item:hover {
+      border-color: #667eea;
+      background: rgba(102,126,234,0.05);
+      transform: translateX(4px);
+    }
+    .menu-number {
+      width: 20px; height: 20px;
+      background: #667eea;
+      color: #fff;
+      border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 11px; font-weight: 700;
+    }
 
-    .debug-panel {
+    .toast {
       position: fixed;
-      bottom: 10px;
-      left: 10px;
-      background: #1e1e1e;
-      color: #4ade80;
-      padding: 10px;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 10px;
-      max-width: 300px;
-      max-height: 150px;
-      overflow-y: auto;
-      z-index: 9999;
-      display: none;
+      bottom: 20px; left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: #1f2937;
+      color: #fff;
+      padding: 12px 24px;
+      border-radius: 30px;
+      font-size: 13px;
+      opacity: 0;
+      transition: all 0.3s ease;
+      z-index: 1000;
     }
-    .debug-panel.show { display: block; }
+    .toast.show { transform: translateX(-50%) translateY(0); opacity: 1; }
+    .toast.success { background: #10b981; }
+    .toast.error { background: #ef4444; }
+
+    /* Scrollbar styling */
+    .chat-messages::-webkit-scrollbar { width: 6px; }
+    .chat-messages::-webkit-scrollbar-track { background: transparent; }
+    .chat-messages::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 3px; }
+    .chat-messages::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
   </style>
 </head>
 <body>
@@ -282,14 +324,16 @@
     <div class="chat-header">
       <div class="bot-avatar">🤖</div>
       <div class="header-info">
-        <div class="header-title">Klim's Assistant</div>
-        <div class="header-subtitle">Online • Siap membantu</div>
+        <div class="header-title">Klim's Assistant Pro</div>
+        <div class="header-subtitle">
+          <span class="status-dot"></span>
+          <span id="statusText">Online • Siap membantu</span>
+        </div>
       </div>
-      <div class="save-badge" id="saveBadge" title="Klik untuk test koneksi">
-        <span id="saveBadgeIcon">💾</span>
-        <span id="saveBadgeText">Histori</span>
+      <div class="save-status" id="saveStatus" onclick="testConnection()">
+        <span id="saveIcon">💾</span>
+        <span id="saveText">History</span>
       </div>
-      <div class="status-indicator" id="statusIndicator"></div>
     </div>
 
     <div class="chat-messages" id="chatMessages"></div>
@@ -301,246 +345,208 @@
     </div>
 
     <div class="quick-replies">
-      <span class="chip" onclick="sendQuickReply('1')">1</span>
-      <span class="chip" onclick="sendQuickReply('2')">2</span>
-      <span class="chip" onclick="sendQuickReply('3')">3</span>
-      <span class="chip" onclick="sendQuickReply('4')">4</span>
-      <span class="chip" onclick="sendQuickReply('5')">5</span>
-      <span class="chip" onclick="sendQuickReply('6')">6</span>
-      <span class="chip" onclick="sendQuickReply('7')">7</span>
-      <span class="chip" onclick="sendQuickReply('8')">8</span>
-      <span class="chip" onclick="sendQuickReply('9')">9</span>
-      <span class="chip" onclick="sendQuickReply('10')">10</span>
-      <span class="chip" onclick="sendQuickReply('11')">11</span>
-      <span class="chip" onclick="sendQuickReply('20')">20</span>
+      <span class="chip" onclick="sendQuick('1')">1</span>
+      <span class="chip" onclick="sendQuick('2')">2</span>
+      <span class="chip" onclick="sendQuick('3')">3</span>
+      <span class="chip" onclick="sendQuick('4')">4</span>
+      <span class="chip" onclick="sendQuick('5')">5</span>
+      <span class="chip" onclick="sendQuick('6')">6</span>
+      <span class="chip" onclick="sendQuick('7')">7</span>
+      <span class="chip" onclick="sendQuick('8')">8</span>
+      <span class="chip" onclick="sendQuick('9')">9</span>
+      <span class="chip" onclick="sendQuick('10')">10</span>
+      <span class="chip" onclick="sendQuick('11')">11</span>
+      <span class="chip" onclick="sendQuick('20')">Menu</span>
     </div>
 
     <div class="chat-input">
-      <input id="userInput" type="text" placeholder="Tulis pesan yang diinginkan..." autocomplete="off"/>
+      <input id="userInput" type="text" placeholder="Ketik pesan atau pilih menu..." autocomplete="off"/>
       <button class="send-btn" onclick="sendMessage()">
-        <svg viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z"/></svg>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+          <path d="M22 2L11 13M22 2l-7 20-4-9-9-4 20-7z"/>
+        </svg>
       </button>
     </div>
   </div>
 
-  <!-- Debug panel (aktifkan dengan klik Ctrl+Shift+D) -->
-  <div class="debug-panel" id="debugPanel"></div>
+  <div class="toast" id="toast"></div>
 
   <script>
-    // ════════════════════════════════════════════════════════════════
-    // ⚙️  KONFIGURASI - PASTIKAN URL SUDAH BENAR!
-    // ════════════════════════════════════════════════════════════════
+    // ═══════════════════════════════════════════════════════════════
+    // ⚙️ KONFIGURASI - UPDATE URL WEB APP ANDA DI SINI!
+    // ═══════════════════════════════════════════════════════════════
     const CONFIG = {
+      // ID Spreadsheet untuk membaca data (gunakan ID spreadsheet sumber chatbot)
       SHEET_ID: '1REf1Z_Bxp91X_FMcgiEHOwAHl-hwAm44YXHGIvw3aXY',
       SHEET_NAME: 'Sheet1',
       
-      // 🔴 PENTING: Ganti dengan URL Web App Anda!
-      // Format: https://script.google.com/macros/s/AKfyc.../exec
-      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbwMfTrPEn13WooPdTAb3rkEI9EBJAJgGIfLfBn7UG3I4Ch8sxtLRpAPQFbfxOPdd8lG/exec',
+      // 🔴 PENTING: Ganti dengan URL Web App GAS yang sudah di-deploy!
+      APPS_SCRIPT_URL: 'https://script.google.com/macros/s/AKfycbzoJZt3sTxbdO78ahAqElAcwG7FV0A5qYXHcuA05YKzYzUQ-Cyt7aX6RcAI5bF-xBLrRA/exec',
       
-      DEBUG: true  // Set true untuk melihat log di console
+      DEBUG: true
     };
 
-    // State
-    let sheetCache = [];
-    let cacheValid = false;
-    let isDataLoaded = false;
-    let saveQueue = Promise.resolve();
+    // State management
+    const state = {
+      sheetCache: [],
+      cacheValid: false,
+      isDataLoaded: false,
+      saveQueue: Promise.resolve(),
+      sessionId: generateSessionId()
+    };
 
-    // Session ID unik
-    const SESSION_ID = (() => {
+    // ═══════════════════════════════════════════════════════════════
+    // UTILITY FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════
+    function generateSessionId() {
       const now = new Date();
       const pad = n => String(n).padStart(2, '0');
-      const date = `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}`;
-      const time = `${pad(now.getHours())}${pad(now.getMinutes())}`;
-      const rand = Math.random().toString(36).substr(2, 5).toUpperCase();
-      return `${date}-${time}-${rand}`;
-    })();
+      return `${now.getFullYear()}${pad(now.getMonth()+1)}${pad(now.getDate())}-${pad(now.getHours())}${pad(now.getMinutes())}-${Math.random().toString(36).substr(2, 5).toUpperCase()}`;
+    }
 
-    // Debug logger
     function log(...args) {
       if (CONFIG.DEBUG) {
         console.log('[ChatBot]', ...args);
-        const debugPanel = document.getElementById('debugPanel');
-        if (debugPanel.classList.contains('show')) {
-          const line = args.map(a => typeof a === 'object' ? JSON.stringify(a) : a).join(' ');
-          debugPanel.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${line}</div>`;
-          debugPanel.scrollTop = debugPanel.scrollHeight;
-        }
       }
     }
 
-    // Toggle debug panel
-    document.addEventListener('keydown', (e) => {
-      if (e.ctrlKey && e.shiftKey && e.key === 'D') {
-        document.getElementById('debugPanel').classList.toggle('show');
-      }
-    });
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      toast.textContent = message;
+      toast.className = `toast ${type} show`;
+      setTimeout(() => toast.classList.remove('show'), 3000);
+    }
 
-    // ════════════════════════════════════════════════════════════════
-    // STATUS BADGE
-    // ════════════════════════════════════════════════════════════════
-    function setBadge(state, message = null) {
-      const badge = document.getElementById('saveBadge');
-      const icon = document.getElementById('saveBadgeIcon');
-      const text = document.getElementById('saveBadgeText');
-      const indicator = document.getElementById('statusIndicator');
+    function updateSaveStatus(status, text) {
+      const badge = document.getElementById('saveStatus');
+      const icon = document.getElementById('saveIcon');
+      const label = document.getElementById('saveText');
       
-      badge.className = 'save-badge ' + (state || '');
+      badge.className = 'save-status ' + status;
       
       const states = {
-        saving: { icon: '⏳', text: 'Menyimpan...' },
-        saved: { icon: '✅', text: 'Tersimpan' },
-        error: { icon: '⚠️', text: 'Gagal' },
-        config: { icon: '🔧', text: 'Belum Config' },
-        testing: { icon: '🔄', text: 'Testing...' }
+        saving: { icon: '⏳', text: text || 'Menyimpan...' },
+        saved: { icon: '✅', text: text || 'Tersimpan' },
+        error: { icon: '⚠️', text: text || 'Gagal' },
+        config: { icon: '🔧', text: text || 'Setup' },
+        default: { icon: '💾', text: 'History' }
       };
       
-      if (states[state]) {
-        icon.textContent = states[state].icon;
-        text.textContent = message || states[state].text;
-      } else {
-        icon.textContent = '💾';
-        text.textContent = 'Histori';
-      }
+      const state = states[status] || states.default;
+      icon.textContent = state.icon;
+      label.textContent = state.text;
       
-      if (state === 'error') indicator.classList.add('error');
-      else if (state === 'saving') indicator.classList.add('warning');
-      else indicator.className = 'status-indicator';
-      
-      if (state === 'saved' || state === 'error') {
-        setTimeout(() => setBadge(''), 3000);
+      if (status === 'saved') {
+        setTimeout(() => updateSaveStatus(''), 3000);
       }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // FUNGSI SPREADSHEET - YANG PALING PENTING!
-    // ════════════════════════════════════════════════════════════════
-    
-    // 🔥 FIX UTAMA: Gunakan text/plain untuk menghindari CORS preflight
+    // ═══════════════════════════════════════════════════════════════
+    // SPREADSHEET INTEGRATION - FUNGSI PENTING!
+    // ═══════════════════════════════════════════════════════════════
+    function isConfigured() {
+      return CONFIG.APPS_SCRIPT_URL && 
+             !CONFIG.APPS_SCRIPT_URL.includes('YOUR_') &&
+             CONFIG.APPS_SCRIPT_URL.startsWith('https://script.google.com/macros/s/');
+    }
+
+    // 🔥 FUNGSI UTAMA: Simpan chat ke Spreadsheet
     async function saveToSheet(sender, message, retryCount = 0) {
       if (!isConfigured()) {
-        log('URL not configured, skipping save');
-        setBadge('config');
+        log('⚠️ APPS_SCRIPT_URL belum dikonfigurasi');
         return { skipped: true, reason: 'not_configured' };
       }
 
       const payload = {
-        sessionId: SESSION_ID,
+        sessionId: state.sessionId,
         sender: sender,
         message: message,
         userAgent: navigator.userAgent,
         timestamp: new Date().toISOString()
       };
 
-      log('Saving payload:', payload);
+      log('💾 Saving:', payload);
 
       return new Promise((resolve, reject) => {
-        saveQueue = saveQueue.then(async () => {
-          setBadge('saving');
-          
+        state.saveQueue = state.saveQueue.then(async () => {
           try {
-            // 🔴 KUNCI SUKSES: Content-Type harus text/plain, BUKAN application/json!
-            // Ini menghindari preflight request yang tidak dihandle oleh GAS [^3^][^8^]
+            // 🔴 KUNCI SUKSES: Gunakan text/plain untuk menghindari CORS preflight
             const response = await fetch(CONFIG.APPS_SCRIPT_URL, {
               method: 'POST',
-              // JANGAN gunakan mode: 'no-cors' - itu membuat response opaque!
-              redirect: 'follow',  // Penting untuk handle GAS redirect [^8^]
+              redirect: 'follow',
               headers: {
-                'Content-Type': 'text/plain;charset=utf-8'  // 🔥 Kunci fix!
+                'Content-Type': 'text/plain;charset=utf-8'
               },
-              body: JSON.stringify(payload)  // Data tetap JSON string
+              body: JSON.stringify(payload)
             });
 
-            log('Response status:', response.status);
-            
+            log('📡 Response status:', response.status);
+
             if (!response.ok) {
-              throw new Error('HTTP ' + response.status);
+              throw new Error(`HTTP ${response.status}`);
             }
-            
-            // Parse response
-            let result;
-            try {
-              result = await response.json();
-            } catch (e) {
-              const text = await response.text();
-              log('Raw response:', text);
-              throw new Error('Invalid JSON response: ' + text.substring(0, 100));
-            }
-            
-            log('Save result:', result);
+
+            const result = await response.json();
+            log('✅ Save result:', result);
 
             if (result.status === 'success') {
-              setBadge('saved');
-              return { success: true, data: result };
+              return { success: true, data: result.data };
             } else {
-              throw new Error(result.message || 'Server returned error status');
+              throw new Error(result.message || 'Server error');
             }
 
           } catch (err) {
-            log('Save error (attempt ' + (retryCount + 1) + '):', err);
+            log('❌ Save error:', err);
             
-            // Retry logic
+            // Retry logic (max 2 retries)
             if (retryCount < 2) {
-              setBadge('saving', 'Retry ' + (retryCount + 1) + '...');
-              await new Promise(r => setTimeout(r, 1000));
+              updateSaveStatus('saving', `Retry ${retryCount + 1}...`);
+              await new Promise(r => setTimeout(r, 1000 * (retryCount + 1)));
               return saveToSheet(sender, message, retryCount + 1);
             }
             
-            setBadge('error', err.message);
             return { success: false, error: err.message };
           }
         });
         
-        saveQueue.then(resolve).catch(reject);
+        state.saveQueue.then(resolve).catch(reject);
       });
     }
 
-    function isConfigured() {
-      return CONFIG.APPS_SCRIPT_URL && 
-             !CONFIG.APPS_SCRIPT_URL.includes('GANTI_DENGAN') &&
-             CONFIG.APPS_SCRIPT_URL.startsWith('https://script.google.com/macros/s/');
-    }
-
-    // Test koneksi
+    // Test koneksi ke GAS
     async function testConnection() {
       if (!isConfigured()) {
-        alert('⚠️ URL Web App belum dikonfigurasi!\n\nSilakan:\n1. Deploy GAS sebagai Web App\n2. Copy URL yang dihasilkan\n3. Paste ke APPS_SCRIPT_URL di kode HTML');
+        showToast('⚠️ URL Web App belum dikonfigurasi!', 'error');
+        updateSaveStatus('config');
         return false;
       }
       
-      setBadge('testing');
+      updateSaveStatus('saving', 'Testing...');
       
       try {
         const url = CONFIG.APPS_SCRIPT_URL + '?action=test';
         const response = await fetch(url);
         const data = await response.json();
         
-        log('Test result:', data);
-        
         if (data.status === 'ok') {
-          alert('✅ Koneksi berhasil!\n\nSpreadsheet: ' + data.spreadsheetName + 
-                '\nSheets: ' + data.sheets.join(', ') +
-                '\nUser: ' + data.user);
-          setBadge('saved');
+          showToast(`✅ Terhubung ke: ${data.spreadsheet.name}`);
+          updateSaveStatus('saved', 'Connected');
           return true;
         } else {
           throw new Error(data.message);
         }
       } catch (err) {
-        log('Test failed:', err);
-        alert('❌ Koneksi gagal:\n' + err.message + 
-              '\n\nPastikan:\n1. Web App sudah di-deploy\n2. Permission: Execute as Me, Access: Anyone\n3. URL benar');
-        setBadge('error');
+        showToast('❌ Koneksi gagal: ' + err.message, 'error');
+        updateSaveStatus('error');
         return false;
       }
     }
 
-    // ════════════════════════════════════════════════════════════════
-    // CHAT FUNCTIONS (sama seperti sebelumnya)
-    // ════════════════════════════════════════════════════════════════
-    async function getSheetData() {
-      if (cacheValid) return sheetCache;
+    // ═══════════════════════════════════════════════════════════════
+    // CHAT FUNCTIONS
+    // ═══════════════════════════════════════════════════════════════
+    async function loadSheetData() {
+      if (state.cacheValid) return state.sheetCache;
 
       const url = `https://docs.google.com/spreadsheets/d/${CONFIG.SHEET_ID}/gviz/tq?tqx=out:json&sheet=${encodeURIComponent(CONFIG.SHEET_NAME)}`;
 
@@ -552,7 +558,7 @@
         const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
         const raw = JSON.parse(jsonStr);
 
-        sheetCache = raw.table.rows
+        state.sheetCache = raw.table.rows
           .map(row => ({
             question: (row.c[0]?.v ?? '').toString().trim(),
             keywords: (row.c[1]?.v ?? '').toString().trim(),
@@ -560,98 +566,120 @@
           }))
           .filter(item => item.question || item.keywords);
 
-        cacheValid = true;
-        isDataLoaded = true;
-        log('Sheet data loaded:', sheetCache.length, 'rows');
+        state.cacheValid = true;
+        state.isDataLoaded = true;
+        log('📊 Data loaded:', state.sheetCache.length, 'rows');
 
       } catch (err) {
-        console.error('Failed to load sheet data:', err);
-        sheetCache = [];
-        isDataLoaded = false;
+        console.error('❌ Failed to load data:', err);
+        state.sheetCache = [];
+        state.isDataLoaded = false;
       }
       
-      return sheetCache;
+      return state.sheetCache;
     }
 
-    function findAnswer(data, input) {
+    function findAnswer(input) {
       const q = input.trim().toUpperCase();
-      for (const row of data) {
+      
+      // Exact match
+      for (const row of state.sheetCache) {
         if (row.question.toUpperCase() === q) return row.answer;
       }
-      for (const row of data) {
+      
+      // Keyword match
+      for (const row of state.sheetCache) {
         if (!row.keywords) continue;
         const keys = row.keywords.toUpperCase().split(',').map(k => k.trim());
         if (keys.includes(q)) return row.answer;
       }
+      
+      // Partial match
       const qLow = input.trim().toLowerCase();
-      for (const row of data) {
+      for (const row of state.sheetCache) {
         if (row.question.toLowerCase().includes(qLow)) return row.answer;
       }
+      
       return null;
     }
 
-    function renderBotText(text) {
-      if (!text) return '';
-      let out = text;
-      const linkPlaceholders = [];
-      out = out.replace(/<a\s+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi,
-        (match, href, linkText) => {
-          const idx = linkPlaceholders.length;
-          linkPlaceholders.push({ href, linkText });
-          return `__LINK${idx}__`;
-        }
-      );
-      out = out.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
-      out = out.replace(/\n/g, '<br>');
-      out = out.replace(/(https?:\/\/[^\s<__]+)/gi, '<a href="$1" target="_blank">$1</a>');
-      out = out.replace(/__LINK(\d+)__/g, (match, idx) => {
-        const { href, linkText } = linkPlaceholders[parseInt(idx)];
-        return `<a href="${href}" target="_blank">${linkText}</a>`;
+    function renderMessage(text, isUser) {
+      if (isUser) {
+        return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+      }
+      
+      // Render HTML untuk bot (support strong, em, a, br, dll)
+      let html = text;
+      
+      // Parse links dulu untuk menghindari double-processing
+      const links = [];
+      html = html.replace(/<a\s+href=["']([^"']+)["'][^>]*>([\s\S]*?)<\/a>/gi, (match, href, txt) => {
+        links.push({ href, text: txt });
+        return `__LINK${links.length - 1}__`;
       });
-      return `<div class="message-content">${out}</div>`;
-    }
-
-    function getCurrentTime() {
-      return new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      
+      // Escape HTML tags yang tidak diinginkan (kecuali yang sudah kita handle)
+      html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
+      
+      // Restore links
+      links.forEach((link, i) => {
+        html = html.replace(`__LINK${i}__`, `<a href="${link.href}" target="_blank">${link.text}</a>`);
+      });
+      
+      // Convert newline ke <br>
+      html = html.replace(/\n/g, '<br>');
+      
+      // Restore formatting tags (strong, em, b, i, u)
+      html = html.replace(/&lt;(\/?)(strong|em|b|i|u|br)&gt;/gi, '<$1$2>');
+      
+      return html;
     }
 
     function addMessage(text, sender) {
-      const box = document.getElementById('chatMessages');
-      const div = document.createElement('div');
-      div.className = `message ${sender === 'user' ? 'user-message' : 'bot-message'}`;
-
-      let content;
-      if (sender === 'user') {
-        const safe = text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
-        content = `<div class="message-content">${safe}</div>`;
-      } else {
-        content = renderBotText(text);
-      }
-
-      div.innerHTML = content +
-        `<div class="timestamp">${getCurrentTime()}</div>` +
-        `<span class="msg-saved-icon">○</span>`;
+      const container = document.getElementById('chatMessages');
+      const isUser = sender === 'user';
       
-      box.appendChild(div);
-      box.scrollTop = box.scrollHeight;
-
-      // Simpan ke spreadsheet
+      const msgDiv = document.createElement('div');
+      msgDiv.className = `message ${isUser ? 'user-message' : 'bot-message'}`;
+      
+      const time = new Date().toLocaleTimeString('id-ID', { hour: '2-digit', minute: '2-digit' });
+      const content = renderMessage(text, isUser);
+      
+      msgDiv.innerHTML = `
+        <div>${content}</div>
+        <div class="message-meta">
+          ${time}
+          <span class="save-indicator pending" id="ind-${Date.now()}">○</span>
+        </div>
+      `;
+      
+      container.appendChild(msgDiv);
+      container.scrollTop = container.scrollHeight;
+      
+      // Update indicator reference
+      const indicatorId = msgDiv.querySelector('.save-indicator').id;
+      
+      // Save to spreadsheet
+      updateSaveStatus('saving');
       saveToSheet(sender, text).then(result => {
-        const icon = div.querySelector('.msg-saved-icon');
-        if (!icon) return;
+        const ind = document.getElementById(indicatorId);
+        if (!ind) return;
         
         if (result.success) {
-          icon.textContent = '✓';
-          icon.classList.add('visible');
-          icon.title = 'Tersimpan ke spreadsheet';
+          ind.className = 'save-indicator saved';
+          ind.textContent = '✓';
+          ind.title = `Tersimpan (Row ${result.data.rowNumber})`;
+          updateSaveStatus('saved');
         } else if (result.skipped) {
-          icon.textContent = '⊘';
-          icon.classList.add('visible');
-          icon.title = 'History disabled atau belum dikonfigurasi';
+          ind.className = 'save-indicator skipped';
+          ind.textContent = '⊘';
+          ind.title = 'History nonaktif';
+          updateSaveStatus('');
         } else {
-          icon.textContent = '✗';
-          icon.classList.add('visible', 'error');
-          icon.title = 'Gagal simpan: ' + (result.error || 'Unknown');
+          ind.className = 'save-indicator error';
+          ind.textContent = '✗';
+          ind.title = 'Gagal: ' + result.error;
+          updateSaveStatus('error');
         }
       });
     }
@@ -659,6 +687,7 @@
     function showTyping() {
       document.getElementById('typingIndicator').classList.add('active');
     }
+
     function hideTyping() {
       document.getElementById('typingIndicator').classList.remove('active');
     }
@@ -667,73 +696,88 @@
       addMessage(query, 'user');
       showTyping();
 
-      if (!isDataLoaded) await getSheetData();
+      if (!state.isDataLoaded) await loadSheetData();
 
-      const answer = findAnswer(sheetCache, query);
-      const reply = answer
-        ? answer
-        : `Maaf, kode <strong>${query.replace(/[<>]/g,'')}</strong> belum tersedia.`;
+      const answer = findAnswer(query);
+      
+      // Format jawaban dengan HTML support
+      let reply;
+      if (answer) {
+        reply = answer;
+      } else {
+        reply = `Maaf, kode <strong>${escapeHtml(query)}</strong> tidak ditemukan.<br><br>Ketik <strong>20</strong> untuk melihat menu utama.`;
+      }
 
       setTimeout(() => {
         hideTyping();
         addMessage(reply, 'bot');
-      }, 400 + Math.random() * 300);
+      }, 600);
     }
 
-    async function sendMessage() {
-      const inp = document.getElementById('userInput');
-      const txt = inp.value.trim();
-      if (!txt) return;
-      inp.value = '';
-      await processQuery(txt);
+    function escapeHtml(text) {
+      return text.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
     }
 
-    async function sendQuickReply(code) {
-      await processQuery(code);
+    function sendMessage() {
+      const input = document.getElementById('userInput');
+      const text = input.value.trim();
+      if (!text) return;
+      input.value = '';
+      processQuery(text);
     }
 
+    function sendQuick(code) {
+      processQuery(code);
+    }
+
+    // Event listeners
     document.getElementById('userInput').addEventListener('keypress', e => {
       if (e.key === 'Enter') sendMessage();
     });
 
-    document.getElementById('saveBadge').addEventListener('click', testConnection);
-
-    // Init
+    // ═══════════════════════════════════════════════════════════════
+    // INITIALIZATION
+    // ═══════════════════════════════════════════════════════════════
     window.addEventListener('DOMContentLoaded', async () => {
-      const welcomeHTML =
-        '<div class="welcome-title">👋 Semangat Pagi!</div>' +
-        '<div style="line-height:1.0;margin-bottom:2px">Saya asisten virtual Anda. Pilih menu di bawah/ ketik kode:</div>' +
-        '<ul class="menu-list">' +
-        '<li onclick="sendQuickReply(\'1\')"><strong>1</strong>&nbsp; Info PTM Sertifikasi Komisaris</li>' +
-        '<li onclick="sendQuickReply(\'2\')"><strong>2</strong>&nbsp; Info PTM Sertifikasi Dir1 & Dir2</li>' +
-        '<li onclick="sendQuickReply(\'3\')"><strong>3</strong>&nbsp; Info PTM Sertifikasi Pejabat Eksekutif</li>' +
-        '<li onclick="sendQuickReply(\'4\')"><strong>4</strong>&nbsp; Info PTM Sertifikasi Supervisor</li>' +
-        '<li onclick="sendQuickReply(\'5\')"><strong>5</strong>&nbsp; Info PTM Sertifikasi Pelaksana</li>' +
-        '<li onclick="sendQuickReply(\'6\')"><strong>6</strong>&nbsp; Info PJJ Penyegaran Dir-Kom</li>' +
-        '<li onclick="sendQuickReply(\'7\')"><strong>7</strong>&nbsp; Info PJJ Penyegaran Pejabat Eksekutif</li>' +
-        '<li onclick="sendQuickReply(\'8\')"><strong>8</strong>&nbsp; Info Apex BPR Bank Jateng</li>' +
-        '<li onclick="sendQuickReply(\'9\')"><strong>9</strong>&nbsp; Info Kerjasama Pos Indo (Materai)</li>' +
-        '<li onclick="sendQuickReply(\'10\')"><strong>10</strong>&nbsp; Info Pendidikan Khusus Profesi Advokat</li>' +
-        '<li onclick="sendQuickReply(\'11\')"><strong>11</strong>&nbsp; Cek Jatuh Tempo Sertifikat</li>' +
-        '<li onclick="sendQuickReply(\'20\')"><strong>20</strong>&nbsp; Kembali ke Menu Pilihan</li>' +
-        '</ul>';
-
-      const box = document.getElementById('chatMessages');
-      const div = document.createElement('div');
-      div.className = 'message bot-message welcome-message';
-      div.innerHTML = welcomeHTML + `<div class="timestamp">${getCurrentTime()}</div>`;
-      box.appendChild(div);
-
-      await getSheetData();
+      log('🚀 ChatBot initialized. Session:', state.sessionId);
       
+      // Tampilkan welcome message
+      const container = document.getElementById('chatMessages');
+      container.innerHTML = `
+        <div class="message bot-message welcome-card">
+          <div class="welcome-title">👋 Selamat Datang!</div>
+          <div style="color: #64748b; font-size: 13px; line-height: 1.5;">
+            Saya asisten virtual yang siap membantu. Pilih menu di bawah atau ketik nomor yang diinginkan.
+          </div>
+          <div class="menu-grid">
+            <div class="menu-item" onclick="sendQuick('1')"><span class="menu-number">1</span>PTM Komisaris</div>
+            <div class="menu-item" onclick="sendQuick('2')"><span class="menu-number">2</span>PTM Direksi</div>
+            <div class="menu-item" onclick="sendQuick('3')"><span class="menu-number">3</span>PTM Eksekutif</div>
+            <div class="menu-item" onclick="sendQuick('4')"><span class="menu-number">4</span>PTM Supervisor</div>
+            <div class="menu-item" onclick="sendQuick('5')"><span class="menu-number">5</span>PTM Pelaksana</div>
+            <div class="menu-item" onclick="sendQuick('6')"><span class="menu-number">6</span>PJJ Dir-Kom</div>
+            <div class="menu-item" onclick="sendQuick('7')"><span class="menu-number">7</span>PJJ Eksekutif</div>
+            <div class="menu-item" onclick="sendQuick('8')"><span class="menu-number">8</span>Apex BPR</div>
+            <div class="menu-item" onclick="sendQuick('9')"><span class="menu-number">9</span>Pos Indo</div>
+            <div class="menu-item" onclick="sendQuick('10')"><span class="menu-number">10</span>Advokat</div>
+            <div class="menu-item" onclick="sendQuick('11')"><span class="menu-number">11</span>Cek Sertifikat</div>
+            <div class="menu-item" onclick="sendQuick('20')"><span class="menu-number">20</span>Menu Utama</div>
+          </div>
+          <div class="message-meta">${new Date().toLocaleTimeString('id-ID', {hour:'2-digit', minute:'2-digit'})}</div>
+        </div>
+      `;
+      
+      // Load data
+      await loadSheetData();
+      
+      // Check configuration
       if (!isConfigured()) {
-        setBadge('config');
-        log('⚠️ APPS_SCRIPT_URL belum dikonfigurasi');
+        updateSaveStatus('config');
+        showToast('⚠️ Klik icon 💾 untuk setup spreadsheet', 'error');
       } else {
-        log('✅ URL configured:', CONFIG.APPS_SCRIPT_URL.substring(0, 50) + '...');
+        // Auto-test connection
+        testConnection();
       }
-      
-      log('Session ID:', SESSION_ID);
     });
   </script>
 </body>
